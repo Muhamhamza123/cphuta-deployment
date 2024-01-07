@@ -90,6 +90,11 @@ def generate_token(username):
 def set_access_token_local_storage(response, access_token):
     response.headers['Authorization'] = f'Bearer {access_token}'
     response.headers['Access-Control-Expose-Headers'] = 'Authorization'  # Allow the client to access the Authorization header
+
+
+
+from werkzeug.security import check_password_hash
+
 @app.route('/login', methods=['POST', 'OPTIONS'])
 def login():
     if request.method == 'OPTIONS':
@@ -100,36 +105,49 @@ def login():
         response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
         response.headers['Access-Control-Max-Age'] = '3600'
         return response
+
     data = request.get_json()
-    username = data.get('username')
+    identifier = data.get('identifier')  # Assuming 'identifier' can be either username or email
     password = data.get('password')
-    print(f"Received data: {data}")
+
     connection = mysql_pool.get_connection()
     cursor = connection.cursor()
+
     try:
-        cursor.execute("SELECT username FROM users WHERE username=%s AND password_hash=%s", (username, password))
+        # Check if the identifier is a valid email address
+        is_email = '@' in identifier
+        if is_email:
+            # If it's an email, query using the email field
+            cursor.execute("SELECT username, password_hash FROM users WHERE email=%s", (identifier,))
+        else:
+            # If it's a username, query using the username field
+            cursor.execute("SELECT username, password_hash FROM users WHERE username=%s", (identifier,))
+
         user = cursor.fetchone()
-        if user:
+
+        if user :
             stored_username = user[0]
+            print(stored_username)
             access_token = create_access_token(identity=stored_username)
             response = jsonify(success=True, token=access_token)
             set_access_token_local_storage(response, access_token)
             close_mysql_connection(connection, cursor)
             print(f"User {stored_username} has logged in. Token: {access_token}")
             return response, 200  # 200 OK
-        else:            
+        else:
             close_mysql_connection(connection, cursor)
-            return jsonify(success=False, error='Invalid username or password'), 404  # 404 Not Found       
+            return jsonify(success=False, error='Invalid username, email, or password'), 404  # 404 Not Found
 
     except mysql.connector.Error as e:
         # Handle MySQL database errors
-        close_mysql_connection(connection, cursor)        
-        return jsonify(success=False, error=str(e)), 500
-    except Exception as e:
-        # Handle database errors appropriately
         close_mysql_connection(connection, cursor)
         return jsonify(success=False, error=str(e)), 500
-# ... (previous code)
+    except Exception as e:
+        # Handle other errors appropriately
+        close_mysql_connection(connection, cursor)
+        return jsonify(success=False, error=str(e)), 500
+
+
     
 @app.route('/update_metadata', methods=['PUT'])
 def update_metadata():
@@ -233,13 +251,20 @@ def get_project_metadata(cursor, project_ids,connection):
                 cursor.close()
                 connection.close()
 
-@app.route('/user-projects/<username>', methods=['GET'])
-def fetch_user_projects(username):
+@app.route('/user-projects/<identifier>', methods=['GET'])
+def fetch_user_projects(identifier):
     connection = get_mysql_connection()
     cursor = connection.cursor()
 
-    if username:
-        cursor.execute("SELECT user_id FROM users WHERE username = %s", (username,))
+    if identifier:
+        is_email = '@' in identifier
+        if is_email:
+            # If it's an email, query using the email field
+            cursor.execute("SELECT user_id FROM users WHERE email = %s", (identifier,))
+        else:
+            # If it's a username, query using the username field
+            cursor.execute("SELECT user_id FROM users WHERE username = %s", (identifier,))
+
         user_row = cursor.fetchone()
         if user_row:
             user_id = user_row[0]
@@ -287,6 +312,7 @@ def fetch_user_projects(username):
         'project_count': 0,
         'metadata': []
     })
+
     
 
 def fetch_and_format_influx_data(username, measurement_name, project_name):
@@ -1082,29 +1108,34 @@ def search():
 url = 'http://128.214.252.242:8086'
 token = 'o2QrMfzLqs75ACyqBnXK1X7lM5Hswy6L5OeaSUZcIoZbFAlngzxNIvRZOyj3ap0Z6dxQb7Y-sIVtmpx-P1LkdA=='
 org = 'w3data'
-bucket = "new1"
-
-
+bucket = "new"
 @app.route('/delete/<username>', methods=['POST'])
 def delete_data(username):
     try:
         data = request.get_json()
-
         # Extract necessary parameters
         selectedMeasurement = data.get('selectedMeasurement')
         start_time_str = data.get('startDate')
         stop_time_str = data.get('endDate')
+        location = data.get('data_Location')
         data_creator = data.get('dataCreator')
-
+        print(username)
+        print(data_creator)
+        # Check if the provided username matches the data_creator
+        # Check if the provided username matches the data_creator
+        if username != data_creator:
+            return jsonify({'error': 'Unauthorized. Username and data creator do not match.'}), 401       
+        
+        print(f"Matched: {data_creator}")
         # Convert start_time and stop_time to RFC3339 format
         start_time = datetime.strptime(start_time_str, '%Y-%m-%d %H:%M:%S').isoformat() + 'Z'
         stop_time = datetime.strptime(stop_time_str, '%Y-%m-%d %H:%M:%S').isoformat() + 'Z'
-
         print(f"Received Data for Deletion - Measurement: {selectedMeasurement}, Data Creator: {data_creator}")
         print(f"Start Time: {start_time}, Stop Time: {stop_time}")
-
         # Construct the InfluxDB delete query
         delete_query = f'_measurement="{selectedMeasurement}" AND data_creator="{data_creator}"'
+        if location:
+            delete_query += f' AND location="{location}"'      
 
         # Prepare data for the InfluxDB delete request
         delete_data = {
@@ -1112,13 +1143,11 @@ def delete_data(username):
             "stop": stop_time,
             "predicate": delete_query
         }
-
         # InfluxDB API endpoint
         influxdb_url = f'{url}/api/v2/delete?org={org}&bucket={bucket}'
 
         # InfluxDB API Token
         influxdb_token = token
-
         # Headers for the delete request
         headers = {
             'Authorization': f'Token {influxdb_token}',
@@ -1126,23 +1155,15 @@ def delete_data(username):
         }
 
         # Make the InfluxDB delete request
+        
         response = requests.post(influxdb_url, json=delete_data, headers=headers)
-
         # Check the response status
         if response.status_code == 204:
             return jsonify({'message': 'Data deleted successfully'})
         else:
-            return jsonify({'error': f'Failed to delete data. InfluxDB API response: {response.text}'}), 500
-
+            return jsonify({'error': f'Failed to delete data check the querry. InfluxDB API response: {response.text}'}), 500
     except Exception as e:
         return jsonify({'error': f'An unexpected error occurred: {str(e)}'}), 500
-
-
-
-
-
-
-
 
 
 

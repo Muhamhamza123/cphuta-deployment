@@ -1,8 +1,7 @@
-// AuthService.js
 import { toast } from 'react-toastify';
 
 const AuthService = {
-  login: async (username, password) => {
+  login: async (identifier, password) => {
     try {
       const response = await fetch('/login', {
         method: 'POST',
@@ -10,7 +9,7 @@ const AuthService = {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          username,
+          identifier,  // Use the provided identifier (email or username)
           password,
         }),
       });
@@ -24,7 +23,7 @@ const AuthService = {
         toast.success('Login successful');
         return { success: true };
       } else if (response.status === 404) {
-        toast.error('Invalid username or password.');
+        toast.error('Invalid username, email, or password.');
         return { success: false };
       } else if (response.status === 500) {
         toast.error('An unexpected server error occurred.');

@@ -132,12 +132,12 @@ const UploadForm = () => {
     <div style={{ width: '60%',  textAlign: 'left',marginInline:'auto',float:'right' }}>
       <h1>Upload Data :</h1>   
       <form className='Uplaod-form' onSubmit={handleSubmit}>
-      <label style={{ padding:'0px 0px 0px 15px'}}>Abstract:</label>
+      <label style={{ padding:'0px 0px 0px 15px'}}>Abstract :</label>
       <br></br>
       <textarea style={{  }} placeholder="Abstract" value={abstract} onChange={(e) => setAbstract(e.target.value)}/>
       <div className='Uplaod-form-div'>
       <div>     
-        <label>Select a Measurement:</label>
+        <label>Select a Measurement * :</label>
         <select value={selectedMeasurement} onChange={(e) => setSelectedMeasurement(e.target.value)}>
           <option value=""> -- Select Measurement --</option>
           {measurementNames.map((name) => (
@@ -147,54 +147,54 @@ const UploadForm = () => {
           ))}
         </select>   
 
-        <label>Uplaod file:</label>
+        <label>Uplaod file * :</label>
         <input type="file" onChange={handleFileChange} />
-        <label>Data Creator:</label>
-        <input type="text" placeholder="Data Creator" value={dataCreator} onChange={(e) => setDataCreator(e.target.value)}/>
-         <label>Project Name:</label>
-        <input type="text" placeholder="Project Name" value={projectName} onChange={(e) => setProjectName(e.target.value)}/>
-        <label>Location:</label>
+        <label>Data Creator :</label>
+        <input type="text" placeholder="Data Creator" value={dataCreator} onChange={(e) => setDataCreator(e.target.value)} required/>
+         <label>Project Name :</label>
+        <input type="text" placeholder="Project Name" value={projectName} onChange={(e) => setProjectName(e.target.value)} required/>
+        <label>Location :</label>
         <input type="text" placeholder="Location" value={location} onChange={(e) => setLocation(e.target.value)}/>
-        <label>Date Generated:</label>
+        <label>Date Generated :</label>
         <input type="text" placeholder="Date Generated" value={dateGenerated} onChange={(e) => setDateGenerated(e.target.value)}/>    
-        <label>Data Owner:</label>
+        <label>Data Owner :</label>
         <input type="text" placeholder="Data Owner" value={dataOwner} onChange={(e) => setDataOwner(e.target.value)} />
-        <label>Contact Email</label>
+        <label>Contact Email :</label>
         <input type="text" placeholder="Contact Email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} />
-        <label>ORCID ID:</label>
-        <input type="text" placeholder="ORCID ID" value={orcidId} onChange={(e) => setOrcidId(e.target.value)} />
-        <label>Co-ordinates Format:</label>
+        <label>ORCID ID * :</label>
+        <input type="text" placeholder="ORCID ID" value={orcidId} onChange={(e) => setOrcidId(e.target.value)} required/>
+        <label>Co-ordinates Format :</label>
         <input type="text" placeholder="Co-ordinates Format:" value={orcidId} onChange={(e) => setOrcidId(e.target.value)} /> 
-        <label>Other Contributors:</label>
+        <label>Other Contributors :</label>
         <input type="text" placeholder="Other Contributors" value={otherContributors} onChange={(e) => setOtherContributors(e.target.value)} />
       </div>
       <div> 
-        <label>Funding Information:</label>
+        <label>Funding Information :</label>
         <input type="text" placeholder="Funding Information" value={fundingInformation} onChange={(e) => setFundingInformation(e.target.value)} />
-        <label>Data License:</label>
+        <label>Data License :</label>
         <select value={dataLicense} onChange={(e) => setDataLicense(e.target.value)} >
           <option value="">-- Select Data License --</option>
           <option value="License Option 1">License Option 1</option>
           <option value="License Option 2">License Option 2</option>
           <option value="License Option 3">License Option 3</option>       
       </select>
-        <label>Latitude:</label>
-        <input type="text" placeholder="Latitude" value={latitude} onChange={(e) => setLatitude(e.target.value)} />
-        <label>Longitude:</label>
-        <input type="text" placeholder="Longitude" value={longitude} onChange={(e) => setLongitude(e.target.value)} />
-        <label>Time Zone:</label>
+        <label>Latitude * :</label>
+        <input type="text" placeholder="Latitude" value={latitude} onChange={(e) => setLatitude(e.target.value)} required/>
+        <label>Longitude * :</label>
+        <input type="text" placeholder="Longitude" value={longitude} onChange={(e) => setLongitude(e.target.value)} required/>
+        <label>Time Zone :</label>
         <input type="text" placeholder="Time Zone" value={timeZone} onChange={(e) => setTimeZone(e.target.value)} />
-        <label>Unit of Measurement:</label>
+        <label>Unit of Measurement :</label>
         <input type="text" placeholder="Unit of Measurement" value={unitOfMeasurement} onChange={(e) => setUnitOfMeasurement(e.target.value)} />
-        <label>Sensor Make and Type</label>
+        <label>Sensor Make and Type :</label>
         <input type="text" placeholder="Sensor Make and Type" value={sensorMakeAndType} onChange={(e) => setSensorMakeAndType(e.target.value)} />
-        <label>Sensor Accuracy:</label>
+        <label>Sensor Accuracy :</label>
         <input type="text" placeholder="Sensor Accuracy" value={sensorAccuracy} onChange={(e) => setSensorAccuracy(e.target.value)} />
-        <label>Sampling Method:</label>
+        <label>Sampling Method :</label>
         <input type="text" placeholder="Sampling Method" value={samplingMethod} onChange={(e) => setSamplingMethod(e.target.value)} />
-        <label>Related Publication:</label>
+        <label>Related Publication :</label>
         <input type="text" placeholder="Related Publication" value={relatedPublication} onChange={(e) => setRelatedPublication(e.target.value)} />
-        <label>Additional Notes:</label>
+        <label>Additional Notes :</label>
         <input type="text" placeholder="Additional Notes" value={additionalNotes} onChange={(e) => setAdditionalNotes(e.target.value)} />
         <div>
       </div>

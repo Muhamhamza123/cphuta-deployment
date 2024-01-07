@@ -6,12 +6,12 @@ import '../styles/Welcom.css'; // Make sure the path to your CSS file is correct
 import AuthService from '../api-services/AuthService';
 
 const Login = () => {
-  const [username, setUsername] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [success, setSuccess] = useState(null);
 
   const handleLogin = async () => {
-    const { success } = await AuthService.login(username, password);
+    const { success } = await AuthService.login(identifier, password);
 
     if (success) {
       setSuccess(true);
@@ -21,8 +21,9 @@ const Login = () => {
   };
 
   if (success) {
-    return <Navigate to={`/home/${username}`} />;
+    return <Navigate to={`/home/${identifier}`} />;
   }
+
   return (
     <div className="welcome-container">
       <ToastContainer />
@@ -30,9 +31,9 @@ const Login = () => {
         <h1>Login</h1>
         <input 
           type="text"
-          placeholder="Username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
+          placeholder="Email or Username"
+          value={identifier}
+          onChange={(e) => setIdentifier(e.target.value)}
         />
         <input
           type="password"

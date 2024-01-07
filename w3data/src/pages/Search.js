@@ -119,8 +119,8 @@ const handleMetadata = () => {
       <div  className="main-container-body">
     <div className='search_main_container'>
     <div className='child_one'>
-      <label>Select a Measurement:</label>
-      <select value={selectedMeasurement} onChange={handleMeasurementChange}>
+      <label>Select a Measurement * :</label>
+      <select value={selectedMeasurement} onChange={handleMeasurementChange} required>
         <option value="">-- Select Measurement --</option>
         {measurements.map((measurement, index) => (
           <option key={index} value={measurement}>
@@ -164,7 +164,7 @@ const handleMetadata = () => {
         onChange={handleprojectNameChange}
         placeholder="Enter Project Name"
       />
-    <label>Start Date:</label>
+    <label>Start Date * :</label>
       <DatePicker className='start_date searc_data_input'
      
         selected={startDate}
@@ -173,8 +173,9 @@ const handleMetadata = () => {
         timeFormat="HH:mm"
         timeIntervals={15}
         dateFormat="yyyy-MM-dd HH:mm:ss"
+        required
       />
-    <label>End Date:</label>
+    <label>End Date * :</label>
       <DatePicker
       className='searc_data_input'
         selected={endDate}
@@ -183,8 +184,9 @@ const handleMetadata = () => {
         timeFormat="HH:mm"
         timeIntervals={15}
         dateFormat="yyyy-MM-dd HH:mm:ss"
+        required
       />
-    <label>Data Creator:</label>
+    <label>Data Creator :</label>
       <input
       className='searc_data_input'
         type="text"
@@ -202,9 +204,9 @@ const handleMetadata = () => {
         <h1>Metadata Details</h1>
         <button className='fetch_meta_data' onClick={handleMetadata}><span>Click here to fetch</span> Metadata</button>
 
-<label>Select Version:</label>
+<label>Select Version * :</label>
 
-<select onChange={handleVersionChange}>
+<select onChange={handleVersionChange} required>
   <option value="">All Versions</option>
   {[...new Set(metadata.map(item => item.version))].map((version, index) => (
     <option key={index} value={version}>
