@@ -27,6 +27,9 @@ const useExperimentalEffect = (username) => {
       fieldNames.forEach((fieldName) => {
         initialVisibility[fieldName] = true;
       });
+  
+      // Update the chartTypes state with the initialVisibility object
+      setChartTypes(initialVisibility);
     }
   }, [fieldNames]);
 

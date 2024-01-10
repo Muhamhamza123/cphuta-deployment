@@ -64,6 +64,10 @@
 width: 80%;
 margin-inline: auto;
 height: fit-content;
+display: flex;
+flex-direction: column;
+justify-content: center;
+
 background-color: #27293d;
 padding: 10px;
 margin-top: 20px;

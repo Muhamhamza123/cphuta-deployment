@@ -7,6 +7,7 @@ import TableComponent from '../global-components/MyProject-TableComponent';
 import Metadata from '../global-components/metadata';
 import { ScaleLoader } from 'react-spinners';
 
+
 const MyProjects = () => {
   const navigate = useNavigate();
   const { username } = useParams();
@@ -78,6 +79,33 @@ useEffect(() => {
         : [...prevSelectedFields, field]
     );
   };
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -168,6 +196,8 @@ useEffect(() => {
     <Metadata metadata={metadata} selectedVersion={selectedVersion} selectedProject={selectedProject} />
     </div>   
     <div className='chart_section'>
+    <div>
+        </div>
     {loading ? (
         <p>Loading data...</p>
       ) : showTable ? (
@@ -178,7 +208,7 @@ useEffect(() => {
         </div>
       ) : (
         <div style={{width:'100%'}}>
-          
+           
           <h2>Chart View</h2>
           <ChartComponent data={data} fieldNames={fieldNames} selectedFields={selectedFields} toggleView={toggleView} showTable={showTable} />
         </div>

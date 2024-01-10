@@ -17,6 +17,7 @@ const HelpComponent = () => {
         <li>If using a "timestamp" column, ensure the timestamp format is either "YYYY-MM-DD HH:MM:SS" or "YYYY-MM-DD HH:MM:SS.ssssss".</li>
 
         <li>The CSV file should be delimited using a semicolon (;) or (,).</li>
+        <li>To chnage file Format to correct Csv import data into Excel and store file as CSV(Comma delimited).</li>
       </ul>
       <p>
         Note: Make sure that the CSV file adheres to the specified structure for successful processing.

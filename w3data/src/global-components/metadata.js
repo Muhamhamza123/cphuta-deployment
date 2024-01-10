@@ -32,18 +32,27 @@ const Metadata = ({ metadata, selectedVersion,selectedProject }) => {
   };
 
   return (
-    <div>
+    <div style={{}}>
       <ToastContainer position="bottom-right" autoClose={3000} hideProgressBar={false} />
       <h2>Edit Metadata for Version: {selectedVersion}</h2>
+
+      <div style={{display:'flex'}}>
+
       {filteredMetadata.length > 0 && (
         <MetadataDownload filteredMetadata={filteredMetadata} selectedVersion={selectedVersion} />
       )}
+       <button  className='metadata_download' onClick={callHandleSaveChanges} disabled={isSaving}>
+        {isSaving ? 'Saving...' : 'Save Changes'}
+      </button>
+
+      </div>
+     
 
 {filteredMetadata.map((meta, index) => (
-  <div style={{ display: 'flex', flexWrap: 'wrap', marginBottom: '20px' }} key={index}>
+  <div style={{ display: 'flex', flexWrap: 'wrap', marginBottom: '20px',paddingLeft:'50px' }} key={index}>
     {Object.entries(meta).map(([key, value]) => (
       value !== undefined && (
-        <div key={key} style={{ width: '50%' }}>
+        <div key={key} style={{ width: '50%', }}>
           <p>
             <strong>{key.replace(/_/g, ' ').toUpperCase()}:</strong>
           </p>
@@ -58,9 +67,7 @@ const Metadata = ({ metadata, selectedVersion,selectedProject }) => {
   </div>
 ))}
 
-      <button onClick={callHandleSaveChanges} disabled={isSaving}>
-        {isSaving ? 'Saving...' : 'Save Changes'}
-      </button>
+     
     </div>
   );
 };

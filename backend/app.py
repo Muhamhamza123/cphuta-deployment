@@ -17,21 +17,30 @@ from flask_jwt_extended import JWTManager, jwt_required, create_access_token
 from mysql.connector import Error
 from influxdb.exceptions import InfluxDBClientError, InfluxDBServerError
 from flask.helpers import send_from_directory
-import influxdb_client
-from influxdb_client.client.write_api import SYNCHRONOUS
-
-app = Flask(__name__)
+from flask_caching import Cache
 
 
-CORS(app, supports_credentials=True, origins=['*'])
+
+
+app = Flask(__name__, static_folder='../w3data/build', static_url_path='/')
+@app.route('/')
+def index():
+    return app.send_static_file('index.html')
+@app.errorhandler(404)
+def not_found(e):
+    return app.send_static_file('index.html')
+cache = Cache(app, config={'CACHE_TYPE': 'simple'})
+
+CORS(app, supports_credentials=True)
+
 # MySQL connection pooling configuration
+
 mysql_pool = pooling.MySQLConnectionPool(
     pool_name="mysql_pool",
-      pool_size=32,
-     pool_reset_session=True,
-     host="localhost",
-     user="root",
-     passwd="Nikon12345",
+    pool_reset_session=True,
+     host="86.50.252.118",
+     user="hamza",
+     passwd="Nikon12345!",
      database="w3data-users",
      connect_timeout=10,
  )
@@ -48,17 +57,16 @@ jwt = JWTManager(app)
 influxdb_url = 'http://128.214.252.242:8086'
 influxdb_token = 'o2QrMfzLqs75ACyqBnXK1X7lM5Hswy6L5OeaSUZcIoZbFAlngzxNIvRZOyj3ap0Z6dxQb7Y-sIVtmpx-P1LkdA=='
 influxdb_org = 'w3data'
-influxdb_bucket = "new" 
-
+influxdb_bucket = "new2"  
 
 #gittokken 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
 # InfluxDB connection pooling configuration
+
 influxdb_pool = InfluxDBClient(
     url=influxdb_url,
     token=influxdb_token,
     org=influxdb_org
 )
-
 
 # Initialize the InfluxDB query API
 query_api = influxdb_pool.query_api()
@@ -93,8 +101,6 @@ def set_access_token_local_storage(response, access_token):
 
 
 
-from werkzeug.security import check_password_hash
-
 @app.route('/login', methods=['POST', 'OPTIONS'])
 def login():
     if request.method == 'OPTIONS':
@@ -105,49 +111,36 @@ def login():
         response.headers['Access-Control-Allow-Headers'] = 'Content-Type, Authorization'
         response.headers['Access-Control-Max-Age'] = '3600'
         return response
-
     data = request.get_json()
-    identifier = data.get('identifier')  # Assuming 'identifier' can be either username or email
+    username = data.get('username')
     password = data.get('password')
-
+    print(f"Received data: {data}")
     connection = mysql_pool.get_connection()
     cursor = connection.cursor()
-
     try:
-        # Check if the identifier is a valid email address
-        is_email = '@' in identifier
-        if is_email:
-            # If it's an email, query using the email field
-            cursor.execute("SELECT username, password_hash FROM users WHERE email=%s", (identifier,))
-        else:
-            # If it's a username, query using the username field
-            cursor.execute("SELECT username, password_hash FROM users WHERE username=%s", (identifier,))
-
+        cursor.execute("SELECT username FROM users WHERE username=%s AND password_hash=%s", (username, password))
         user = cursor.fetchone()
-
-        if user :
+        if user:
             stored_username = user[0]
-            print(stored_username)
             access_token = create_access_token(identity=stored_username)
             response = jsonify(success=True, token=access_token)
             set_access_token_local_storage(response, access_token)
             close_mysql_connection(connection, cursor)
             print(f"User {stored_username} has logged in. Token: {access_token}")
             return response, 200  # 200 OK
-        else:
+        else:            
             close_mysql_connection(connection, cursor)
-            return jsonify(success=False, error='Invalid username, email, or password'), 404  # 404 Not Found
+            return jsonify(success=False, error='Invalid username or password'), 404  # 404 Not Found       
 
     except mysql.connector.Error as e:
         # Handle MySQL database errors
-        close_mysql_connection(connection, cursor)
+        close_mysql_connection(connection, cursor)        
         return jsonify(success=False, error=str(e)), 500
     except Exception as e:
-        # Handle other errors appropriately
+        # Handle database errors appropriately
         close_mysql_connection(connection, cursor)
         return jsonify(success=False, error=str(e)), 500
-
-
+# ... (previous code)
     
 @app.route('/update_metadata', methods=['PUT'])
 def update_metadata():
@@ -223,7 +216,7 @@ def update_metadata():
 
 # Function to get an InfluxDB connection from the pool
 def get_influxdb_connection():
-    return client
+    return influxdb_pool
 # Function to close an InfluxDB connection
 
 def get_project_metadata(cursor, project_ids,connection):
@@ -251,20 +244,14 @@ def get_project_metadata(cursor, project_ids,connection):
                 cursor.close()
                 connection.close()
 
-@app.route('/user-projects/<identifier>', methods=['GET'])
-def fetch_user_projects(identifier):
+@app.route('/user-projects/<username>', methods=['GET'])
+@cache.cached(timeout=60) 
+def fetch_user_projects(username):
     connection = get_mysql_connection()
     cursor = connection.cursor()
 
-    if identifier:
-        is_email = '@' in identifier
-        if is_email:
-            # If it's an email, query using the email field
-            cursor.execute("SELECT user_id FROM users WHERE email = %s", (identifier,))
-        else:
-            # If it's a username, query using the username field
-            cursor.execute("SELECT user_id FROM users WHERE username = %s", (identifier,))
-
+    if username:
+        cursor.execute("SELECT user_id FROM users WHERE username = %s", (username,))
         user_row = cursor.fetchone()
         if user_row:
             user_id = user_row[0]
@@ -312,7 +299,6 @@ def fetch_user_projects(identifier):
         'project_count': 0,
         'metadata': []
     })
-
     
 
 def fetch_and_format_influx_data(username, measurement_name, project_name):
@@ -403,6 +389,7 @@ def get_fields():
 
 # Route to fetch InfluxDB data with a measurement name
 @app.route('/influxdb-data-home/<username>', methods=['GET'])
+@cache.cached(timeout=60) 
 def get_influxdb_data_home(username):
       # Get the measurement name from the query parameter    
     # Print the selected measurement name
@@ -457,6 +444,7 @@ def update_project():
         close_mysql_connection(connection, cursor)
 
 @app.route('/profile/<username>', methods=['GET', 'PUT'])
+@cache.cached(timeout=60) 
 def user_profile(username):
     try:
         # Check if the user is logged in (username is stored in the session)
@@ -622,7 +610,9 @@ def process_csv(file_path, data_creator, project_name, location, date_generated,
 
     try:
         with open(file_path, 'r') as file:
-            csv_reader = csv.reader(file, delimiter=';')  # Update delimiter if needed
+            dialect = csv.Sniffer().sniff(file.read(1024))
+            file.seek(0)               
+            csv_reader = csv.reader(file, dialect=dialect)
 
             header = next(csv_reader)
             if "Date" in header and "Time" not in header:
@@ -641,6 +631,7 @@ def process_csv(file_path, data_creator, project_name, location, date_generated,
                         timestamp = datetime.strptime(timestamp_str, timestamp_format)
                     except ValueError:
                         error_msg = f"Error parsing timestamp at line {row_number}: {timestamp_str}"
+                        
                         print(error_msg)
                         return {'success': False, 'error': error_msg}
 
@@ -666,7 +657,14 @@ def process_csv(file_path, data_creator, project_name, location, date_generated,
                             try:
                                 value = float(row[i])
                             except (ValueError, TypeError):
+                                # If float conversion fails, store the value as a string
                                 value = row[i]
+
+                                # If string conversion is not possible, throw an error
+                                if not isinstance(value, str):
+                                    error_msg = f"Error converting value at line {row_number}, column {i + 1}: {row[i]} to either float or string."
+                                    print(error_msg)
+                                    return {'success': False, 'error': error_msg}
 
                         data_point.field(field_name, value)
 
@@ -709,7 +707,7 @@ def process_csv(file_path, data_creator, project_name, location, date_generated,
 
                     rfc3339_timestamp = timestamp.isoformat()
 
-                    data_point = Point("Pallas Stream Sensors")
+                    data_point = Point(selected_measurement)
 
                     # Add the new fields (Data Creator, Project Name, Location, and Date Generated)
                     data_point.tag("data_creator", data_creator)
@@ -718,18 +716,25 @@ def process_csv(file_path, data_creator, project_name, location, date_generated,
                     data_point.tag("date_generated", date_generated)
 
                     for i, field_name in enumerate(header):
-                        if field_name in ["Date", "Time"]:
-                            continue  # Skip Date and Time columns
+                        if field_name == "Date":
+                            continue  # Skip Date column
 
                         # Check for "NA" or empty values
                         if row[i] in ["NA", ""]:
                             value = None  # Represent null value
                         else:
-                            try:                                
+                            # Attempt to convert the value to float, if it fails, treat it as a string
+                            try:
                                 value = float(row[i])
                             except (ValueError, TypeError):
-                                value = row[i]   
-                                return {'success': False, 'error': error_msg}
+                                # If float conversion fails, store the value as a string
+                                value = row[i]
+
+                                # If string conversion is not possible, throw an error
+                                if not isinstance(value, str):
+                                    error_msg = f"Error converting value at line {row_number}, column {i + 1}: {row[i]} to either float or string."
+                                    print(error_msg)
+                                    return {'success': False, 'error': error_msg}
 
                         data_point.field(field_name, value)
 
@@ -772,18 +777,25 @@ def process_csv(file_path, data_creator, project_name, location, date_generated,
                     data_point.tag("date_generated", date_generated)
 
                     for i, field_name in enumerate(header):
-                        if field_name in ["timestamp"]:
-                            continue  # Skip timestamp columns
+                        if field_name == "Date":
+                            continue  # Skip Date column
 
                         # Check for "NA" or empty values
                         if row[i] in ["NA", ""]:
                             value = None  # Represent null value
                         else:
+                            # Attempt to convert the value to float, if it fails, treat it as a string
                             try:
                                 value = float(row[i])
-                            except (ValueError, TypeError):                               
-                                value = row[i]   
-                                return {'success': False, 'error': error_msg}  
+                            except (ValueError, TypeError):
+                                # If float conversion fails, store the value as a string
+                                value = row[i]
+
+                                # If string conversion is not possible, throw an error
+                                if not isinstance(value, str):
+                                    error_msg = f"Error converting value at line {row_number}, column {i + 1}: {row[i]} to either float or string."
+                                    print(error_msg)
+                                    return {'success': False, 'error': error_msg}
 
                         data_point.field(field_name, value)
 
@@ -796,7 +808,7 @@ def process_csv(file_path, data_creator, project_name, location, date_generated,
                     if len(data_points) == 50000:
                         # Write data points in chunks
                         write_data_points(data_points)
-                        data_points = []  # Clear the list for the next batch
+                        data_points = []
 
             else:
                 error_msg = "File does not contain a suitable timestamp or date/time column."
@@ -809,8 +821,8 @@ def process_csv(file_path, data_creator, project_name, location, date_generated,
 
         return {'success': True}
 
-    except Exception as e:
-        error_msg = f"Failed to process CSV: {e}"
+    except Exception as error_msg:
+        error_msg = f"Failed to process CSV: {error_msg}"
         print(error_msg)
         return {'success': False, 'error': error_msg}
     
@@ -1102,13 +1114,13 @@ def search():
         print(f'An unexpected error occurred: {str(e)}')
         return jsonify({'error': f'An unexpected error occurred: {str(e)}'}), 500
 
+#influxdb_url = 'http://128.214.252.242:8086'
+#influxdb_token = 'o2QrMfzLqs75ACyqBnXK1X7lM5Hswy6L5OeaSUZcIoZbFAlngzxNIvRZOyj3ap0Z6dxQb7Y-sIVtmpx-P1LkdA=='
+#influxdb_org = 'w3data'
+#influxdb_bucket = "new2"  
 
 
-# InfluxDB configuration
-url = 'http://128.214.252.242:8086'
-token = 'o2QrMfzLqs75ACyqBnXK1X7lM5Hswy6L5OeaSUZcIoZbFAlngzxNIvRZOyj3ap0Z6dxQb7Y-sIVtmpx-P1LkdA=='
-org = 'w3data'
-bucket = "new"
+
 @app.route('/delete/<username>', methods=['POST'])
 def delete_data(username):
     try:
@@ -1121,17 +1133,19 @@ def delete_data(username):
         data_creator = data.get('dataCreator')
         print(username)
         print(data_creator)
-        # Check if the provided username matches the data_creator
+
         # Check if the provided username matches the data_creator
         if username != data_creator:
             return jsonify({'error': 'Unauthorized. Username and data creator do not match.'}), 401       
         
         print(f"Matched: {data_creator}")
+
         # Convert start_time and stop_time to RFC3339 format
         start_time = datetime.strptime(start_time_str, '%Y-%m-%d %H:%M:%S').isoformat() + 'Z'
         stop_time = datetime.strptime(stop_time_str, '%Y-%m-%d %H:%M:%S').isoformat() + 'Z'
         print(f"Received Data for Deletion - Measurement: {selectedMeasurement}, Data Creator: {data_creator}")
         print(f"Start Time: {start_time}, Stop Time: {stop_time}")
+
         # Construct the InfluxDB delete query
         delete_query = f'_measurement="{selectedMeasurement}" AND data_creator="{data_creator}"'
         if location:
@@ -1143,31 +1157,32 @@ def delete_data(username):
             "stop": stop_time,
             "predicate": delete_query
         }
-        # InfluxDB API endpoint
-        influxdb_url = f'{url}/api/v2/delete?org={org}&bucket={bucket}'
 
-        # InfluxDB API Token
-        influxdb_token = token
+        # InfluxDB API endpoint
+        delete_url = f'{influxdb_url}/api/v2/delete?org={influxdb_org}&bucket={influxdb_bucket}'
+        
         # Headers for the delete request
         headers = {
-            'Authorization': f'Token {influxdb_token}',
+            'Authorization': f'Token {influxdb_token}',  # Use the correct influxdb_token variable
             'Content-Type': 'application/json'
         }
 
+        # Print InfluxDB URL, organization, bucket, and token for debugging
+        print(f"InfluxDB URL: {delete_url}")
+        print(f"InfluxDB Organization: {influxdb_org}")
+        print(f"InfluxDB Bucket: {influxdb_bucket}")
+        print(f"InfluxDB Token: {influxdb_token}")
+
         # Make the InfluxDB delete request
-        
-        response = requests.post(influxdb_url, json=delete_data, headers=headers)
+        response = requests.post(delete_url, json=delete_data, headers=headers)
+
         # Check the response status
         if response.status_code == 204:
             return jsonify({'message': 'Data deleted successfully'})
         else:
-            return jsonify({'error': f'Failed to delete data check the querry. InfluxDB API response: {response.text}'}), 500
+            return jsonify({'error': f'Failed to delete data. InfluxDB API response: {response.text}'}), 500
     except Exception as e:
         return jsonify({'error': f'An unexpected error occurred: {str(e)}'}), 500
-
-
-
-
 
 
 
@@ -1236,9 +1251,7 @@ def get_metadata():
     finally:
         close_mysql_connection(connection, cursor)
 
-from waitress import serve
 
 
 if __name__ == '__main__':
     app.run(debug=False)
-

@@ -119,6 +119,20 @@ const UploadForm = () => {
       toast.error('An error occurred');
     }
   };
+  const handleLongitudeChange = (event) => {
+    // Validate input to allow only numbers
+    const inputValue = event.target.value;
+    if (/^\d*\.?\d*$/.test(inputValue)) {
+      setLongitude(inputValue);
+    }
+  };
+  const handleLatitudeChange = (event) => {
+    // Validate input to allow only numbers
+    const inputValue = event.target.value;
+    if (/^\d*\.?\d*$/.test(inputValue)) {
+      setLatitude(inputValue);
+    }
+  };
 
   return (
     <div style={{ width: '80%', float:'right',marginBottom:'50px'}}>
@@ -149,20 +163,20 @@ const UploadForm = () => {
 
         <label>Uplaod file * :</label>
         <input type="file" onChange={handleFileChange} />
-        <label>Data Creator :</label>
-        <input type="text" placeholder="Data Creator" value={dataCreator} onChange={(e) => setDataCreator(e.target.value)} required/>
-         <label>Project Name :</label>
+        <label>Data Creator * :</label>
+        <input type="email" placeholder="enter you login username" value={dataCreator} onChange={(e) => setDataCreator(e.target.value)} required/>
+         <label>Project Name * :</label>
         <input type="text" placeholder="Project Name" value={projectName} onChange={(e) => setProjectName(e.target.value)} required/>
-        <label>Location :</label>
-        <input type="text" placeholder="Location" value={location} onChange={(e) => setLocation(e.target.value)}/>
+        <label>Location * :</label>
+        <input type="text" placeholder="Location" value={location} onChange={(e) => setLocation(e.target.value)} required/>
         <label>Date Generated :</label>
         <input type="text" placeholder="Date Generated" value={dateGenerated} onChange={(e) => setDateGenerated(e.target.value)}/>    
         <label>Data Owner :</label>
         <input type="text" placeholder="Data Owner" value={dataOwner} onChange={(e) => setDataOwner(e.target.value)} />
         <label>Contact Email :</label>
-        <input type="text" placeholder="Contact Email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} />
-        <label>ORCID ID * :</label>
-        <input type="text" placeholder="ORCID ID" value={orcidId} onChange={(e) => setOrcidId(e.target.value)} required/>
+        <input type="email" placeholder="Contact Email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} />
+        <label>ORCID ID  :</label>
+        <input type="text" placeholder="ORCID ID" value={orcidId} onChange={(e) => setOrcidId(e.target.value)} />
         <label>Co-ordinates Format :</label>
         <input type="text" placeholder="Co-ordinates Format:" value={orcidId} onChange={(e) => setOrcidId(e.target.value)} /> 
         <label>Other Contributors :</label>
@@ -179,9 +193,9 @@ const UploadForm = () => {
           <option value="License Option 3">License Option 3</option>       
       </select>
         <label>Latitude * :</label>
-        <input type="text" placeholder="Latitude" value={latitude} onChange={(e) => setLatitude(e.target.value)} required/>
+        <input type="text" inputMode="numeric" placeholder="Enter latitude (e.g., 37.7749)" value={latitude} onChange={handleLatitudeChange}  required/>
         <label>Longitude * :</label>
-        <input type="text" placeholder="Longitude" value={longitude} onChange={(e) => setLongitude(e.target.value)} required/>
+        <input type="text" inputMode="numeric" placeholder="Enter longitude (e.g., -122.4194)" value={longitude} onChange={handleLongitudeChange} required/>
         <label>Time Zone :</label>
         <input type="text" placeholder="Time Zone" value={timeZone} onChange={(e) => setTimeZone(e.target.value)} />
         <label>Unit of Measurement :</label>

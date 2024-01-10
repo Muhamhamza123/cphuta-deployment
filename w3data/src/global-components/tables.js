@@ -6,43 +6,59 @@ import useExperimentalEffect from '../api-services/useExperimental_service';
 
 const Tables = () => {
   const { username } = useParams();
-  const { data, fieldNames} = useExperimentalEffect(username); 
+  const { data } = useExperimentalEffect(username);
 
   const renderTable = () => {
     if (!data || !Array.isArray(data) || data.length === 0) {
       return <p>No data available.</p>;
     }
 
+    // Extract unique field names dynamically
+    const uniqueFieldNames = [...new Set(data.map((item) => item.Field))];
+
+    const tableData = data.reduce((acc, item) => {
+      const timestamp = item.Time;
+      const existingRow = acc.find((row) => row.Time === timestamp);
+
+      if (existingRow) {
+        existingRow[item.Field] = item.Value;
+      } else {
+        const newRow = { Time: timestamp, [item.Field]: item.Value };
+        acc.push(newRow);
+      }
+
+      return acc;
+    }, []);
+
     return (
       <div className="table-container">
-        <table>
+        <table className="data-table">
           <thead>
             <tr>
               <th>Time</th>
-              {fieldNames.map((fieldName) => (
+              {uniqueFieldNames.map((fieldName) => (
                 <th key={fieldName}>{fieldName}</th>
-             ) )}
-             
+              ))}
             </tr>
           </thead>
           <tbody>
-            {data.map((item, index) => (
+            {tableData.map((row, index) => (
               <tr key={index}>
-                <td>{item.Time}</td>
-                {fieldNames.map((fieldName) => (
-                  <td key={fieldName}>{item.Value}</td>
+                <td>{row.Time}</td>
+                {uniqueFieldNames.map((fieldName) => (
+                  <td key={fieldName}>{row[fieldName] || ''}</td>
                 ))}
-               
               </tr>
-          )  )}
+            ))}
           </tbody>
         </table>
       </div>
     );
   };
-return (
-    <div style={{width:'100%',height:'auto-fit'}}>      
-    {renderTable()}        
+
+  return (
+    <div style={{ width: '100%', height: 'auto-fit' }}>
+      {renderTable()}
     </div>
   );
 };

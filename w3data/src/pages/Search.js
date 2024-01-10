@@ -86,6 +86,10 @@ const handleMetadata = () => {
     setlocation(event.target.value);
   };
   const handleSearch = () => {
+    if (!startDate || !endDate) {
+      toast.error('Please select both Start Date and End Date.');
+      return;
+    }
     searchData(
       selectedMeasurement,selectedFields,projectName,location,dataCreator,startDate,endDate,setSearchResults,toast
     );
@@ -238,12 +242,10 @@ const handleMetadata = () => {
                 Object.keys(searchResults[0]).map((key) => <th key={key}>{key}</th>)}
             </tr>            
           </thead>
-          <tbody>
-        
-            {searchResults.map((row, index) => (              
+          <tbody>        
+            {searchResults.map((row, index) => (             
               <>
-                 <tr key={index}>
-        
+                 <tr key={index}>        
                 {Object.values(row).map((value, index) => (
                   <td key={index}>{value}</td>
                 ))}
@@ -254,7 +256,6 @@ const handleMetadata = () => {
         </table>
       </div>
     </div>
-
     </div>
     )}
     </div>
