@@ -38,12 +38,18 @@ CORS(app, supports_credentials=True)
 mysql_pool = pooling.MySQLConnectionPool(
     pool_name="mysql_pool",
     pool_reset_session=True,
-     host="86.50.252.118",
-     user="hamza",
-     passwd="Nikon12345!",
-     database="w3data-users",
-     connect_timeout=10,
- )
+    host="128.214.254.101",
+    user="hamza",
+    password="Nikon12345!",  # Use 'password' instead of 'passwd'python
+    database="w3data-users",
+    connect_timeout=5,
+    
+    pool_size=2,  # Reduced pool size to 5, adjust based on your needs
+    buffered=True,  # Enable buffering to fetch results as a dictionary
+    autocommit=True,  # Enable autocommit mode
+    use_pure=True,  # Use pure Python mode for better compatibility
+)
+
 
 
 # JWT configuration
